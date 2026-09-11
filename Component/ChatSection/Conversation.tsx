@@ -6,17 +6,16 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppData } from "../Data/Appcontext";
 import ResponseLoading from "./ResponseLoading";
-
+import { ResponseDateDisplay } from "../utilis/utilis";
 type AnimatedEntryProps = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   delay?: number;
 };
-
 const AnimatedEntry = ({ children, style, delay = 0 }: AnimatedEntryProps) => {
   const progress = useRef(new Animated.Value(0)).current;
 
@@ -36,7 +35,7 @@ const AnimatedEntry = ({ children, style, delay = 0 }: AnimatedEntryProps) => {
         {
           opacity: progress,
           transform: [
-            { 
+            {
               translateY: progress.interpolate({
                 inputRange: [0, 1],
                 outputRange: [16, 0],
@@ -57,29 +56,53 @@ const AnimatedEntry = ({ children, style, delay = 0 }: AnimatedEntryProps) => {
   );
 };
 
+const BotHeader = ({
+  repondeAt,
+  rtl,
+}: {
+  repondeAt?: string;
+  rtl?: boolean;
+}) => (
+  <View style={[styles.botHeader, rtl && styles.botHeaderRtl]}>
+    <Ionicons name="water" size={15} color="#2563EB" />
+    <Text style={styles.botName}>AgroBot Automate</Text>
+    <Text style={styles.botTime}>
+      {repondeAt ? ResponseDateDisplay(repondeAt) : "À l'instant"}
+    </Text>
+  </View>
+);
+
 const Conversation = () => {
   const { conversation } = useAppData();
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <View style={styles.container}>
       {conversation.map((item, index) => (
         <View key={index} style={styles.exchange}>
           <AnimatedEntry style={styles.userBubble}>
-            <Text style={styles.userLabel}>Vous • Parcelle Nord</Text>
+            <Text style={styles.userLabel}>Vous</Text>
             <Text style={styles.userMessage}>{item.message}</Text>
           </AnimatedEntry>
 
           <AnimatedEntry style={styles.botCard} delay={150}>
-            <View style={styles.botHeader}>
-              <Ionicons name="water" size={15} color="#2563EB" />
-              <Text style={styles.botName}>AgroBot Automate</Text>
-              <Text style={styles.botTime}>À l'instant</Text>
-            </View>
+            <BotHeader repondeAt={item.repondeAt} rtl={item.lang === "ar"} />
 
-            {!item.loadingResponse ? (
+            {item.loadingResponse ? (
               <ResponseLoading />
             ) : (
-              <Text style={styles.botResponse}>{item.response}</Text>
+              <Text
+                style={[
+                  styles.botResponse,
+                  item.lang === "ar" && styles.botResponseRtl,
+                ]}
+              >
+                {item.response}
+              </Text>
             )}
           </AnimatedEntry>
         </View>
@@ -149,5 +172,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#334155",
     lineHeight: 22,
+  },
+  // L'arabe s'écrit de droite à gauche : on aligne le texte et on inverse
+  // l'ordre de l'en-tête (icône + nom + heure) pour rester cohérent.
+  botResponseRtl: {
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  botHeaderRtl: {
+    flexDirection: "row-reverse",
   },
 });

@@ -23,7 +23,7 @@ function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#e2e8f080",
     paddingLeft: 20,
     paddingRight: 20,
   },

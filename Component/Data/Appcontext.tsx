@@ -11,6 +11,9 @@ export type conversationType = {
   message: string;
   response: string;
   loadingResponse: boolean;
+  repondeAt?: string;
+  /** Langue détectée de l'échange — sert à aligner l'arabe à droite. */
+  lang?: "fr" | "en" | "ar";
 };
 
 type AppContextType = {
