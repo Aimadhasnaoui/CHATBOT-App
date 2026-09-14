@@ -7,13 +7,18 @@ import {
   ReactNode,
 } from "react";
 
+export type MenuOption = { topic: string; label: string };
+
 export type conversationType = {
+  /** Vide pour un message d'accueil du bot, sans bulle utilisateur. */
   message: string;
   response: string;
   loadingResponse: boolean;
   createdAt?: string;
   /** Langue détectée de l'échange — sert à aligner l'arabe à droite. */
   lang?: "fr" | "en" | "ar";
+  /** Options proposées par le bot pour guider la conversation. */
+  menu?: MenuOption[];
 };
 
 type AppContextType = {

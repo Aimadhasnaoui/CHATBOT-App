@@ -1,8 +1,18 @@
-import React from "react";
-import { StyleSheet, Text, View, ScrollView, Pressable } from "react-native";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Logo from "../../assets/Symbol.svg";
+import { useAppData } from "../Data/Appcontext";
+import { CreatNewConversation } from "../../Servises/Historique";
+import { describeNetworkError } from "../../Servises/Conversation";
 
 type Suggestion = {
   id: string;
@@ -50,6 +60,34 @@ const suggestions: Suggestion[] = [
 ];
 
 const ChatPage = () => {
+  const { setConversationSart, setconversation, setcoversationId } = useAppData();
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleStart = async () => {
+    if (starting) return;
+    setStarting(true);
+    setError(null);
+
+    try {
+      const data = await CreatNewConversation();
+      setcoversationId(data.conversationId);
+      setconversation([
+        {
+          message: "",
+          response: data.response,
+          loadingResponse: false,
+          menu: data.menu.map((item) => ({ topic: item.topic, label: item.descepretion })),
+        },
+      ]);
+      setConversationSart(true);
+    } catch (err) {
+      setError(describeNetworkError(err).message);
+    } finally {
+      setStarting(false);
+    }
+  };
+
   return (
     <ScrollView
       style={styles.wrapper}
@@ -70,9 +108,24 @@ const ChatPage = () => {
 
         <Text style={styles.greeting}>Bonjour Aimad 👋</Text>
         <Text style={styles.TextStyle}>
-          Comment puis-je optimiser votre arrosage aujourd'hui ? Posez une
-          question ou sélectionnez une suggestion.
+          Comment puis-je optimiser votre arrosage aujourd'hui ? Cliquez sur
+          « Démarrer Conversation » ou écrivez directement votre message
+          ci-dessous.
         </Text>
+        <Pressable
+          style={[styles.buttonDemarrer, starting && styles.buttonDemarrerDisabled]}
+          onPress={handleStart}
+          disabled={starting}
+        >
+          {starting ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.DemarrerText}>
+            Démarrer Conversation
+            </Text>
+          )}
+        </Pressable>
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
 
       {/* <View style={styles.suggestionsSection}>
@@ -205,5 +258,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#334155",
     fontWeight: "500",
+  },
+  buttonDemarrer:{
+    backgroundColor: "#2E7D32",
+      flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal:16,
+    marginBottom: 20,
+    shadowColor: "#2E7D32",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  DemarrerText:{
+     color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  buttonDemarrerDisabled: {
+    opacity: 0.7,
+  },
+  errorText: {
+    color: "#DC2626",
+    fontSize: 12,
+    textAlign: "center",
+    paddingHorizontal: 10,
   },
 });

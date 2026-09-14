@@ -10,6 +10,8 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppData } from "../Data/Appcontext";
 import ResponseLoading from "./ResponseLoading";
+import MenuOptions from "./MenuOptions";
+import { useSendMessage } from "./useSendMessage";
 import { ResponseDateDisplay } from "../utilis/utilis";
 type AnimatedEntryProps = {
   children: ReactNode;
@@ -74,6 +76,7 @@ const BotHeader = ({
 
 const Conversation = () => {
   const { conversation } = useAppData();
+  const { send, sending } = useSendMessage();
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 30000);
@@ -84,10 +87,12 @@ const Conversation = () => {
     <View style={styles.container}>
       {conversation.map((item, index) => (
         <View key={index} style={styles.exchange}>
-          <AnimatedEntry style={styles.userBubble}>
-            <Text style={styles.userLabel}>Vous</Text>
-            <Text style={styles.userMessage}>{item.message}</Text>
-          </AnimatedEntry>
+          {item.message !== "" && (
+            <AnimatedEntry style={styles.userBubble}>
+              <Text style={styles.userLabel}>Vous</Text>
+              <Text style={styles.userMessage}>{item.message}</Text>
+            </AnimatedEntry>
+          )}
 
           <AnimatedEntry style={styles.botCard} delay={150}>
             <BotHeader repondeAt={item.createdAt} rtl={item.lang === "ar"} />
@@ -95,14 +100,23 @@ const Conversation = () => {
             {item.loadingResponse ? (
               <ResponseLoading />
             ) : (
-              <Text
-                style={[
-                  styles.botResponse,
-                  item.lang === "ar" && styles.botResponseRtl,
-                ]}
-              >
-                {item.response}
-              </Text>
+              <>
+                <Text
+                  style={[
+                    styles.botResponse,
+                    item.lang === "ar" && styles.botResponseRtl,
+                  ]}
+                >
+                  {item.response}
+                </Text>
+                {item.menu && (
+                  <MenuOptions
+                    options={item.menu}
+                    onSelect={send}
+                    disabled={sending}
+                  />
+                )}
+              </>
             )}
           </AnimatedEntry>
         </View>

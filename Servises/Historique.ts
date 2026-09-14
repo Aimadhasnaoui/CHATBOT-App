@@ -21,7 +21,7 @@ type ConversationType = {
 };
 export const GetConversations = async (): Promise<ConversationType[]> => {
   const res = await axios.get<ConversationType[]>(
-    `http://192.168.55.74:3000/Conversation`,
+    `http://192.168.20.10:3000/Conversation`,
     { timeout: 15000 },
   );
   return res.data;
@@ -30,7 +30,7 @@ export const GetConversationsById = async (
   id: string,
 ): Promise<ConversationType> => {
   const res = await axios.get<ConversationType>(
-    `http://192.168.55.74:3000/Conversation/${id}`,
+    `http://192.168.20.10:3000/Conversation/${id}`,
     { timeout: 15000 },
   );
   return res.data;
@@ -44,7 +44,7 @@ export const UpdateConversation = async ({
   Title: string;
 }): Promise<{ message: string }> => {
   const res = await axios.put<{ message: string }>(
-    `http://192.168.55.74:3000/Conversation/${id}`,
+    `http://192.168.20.10:3000/Conversation/${id}`,
     { Title },
     { timeout: 15000 },
   );
@@ -53,7 +53,25 @@ export const UpdateConversation = async ({
 
 export const DeleteConversation = async (id: string) => {
   const res = await axios.delete(
-    `http://192.168.55.74:3000/Conversation/${id}`,
+    `http://192.168.20.10:3000/Conversation/${id}`,
+    { timeout: 15000 },
+  );
+  return res.data;
+};
+
+export type MenuItem = { descepretion: string; topic: string };
+
+export type CreateConversationResponse = {
+  message: string;
+  conversationId: string;
+  menu: MenuItem[];
+  response: string;
+};
+
+export const CreatNewConversation = async (): Promise<CreateConversationResponse> => {
+  const res = await axios.post<CreateConversationResponse>(
+    `http://192.168.20.10:3000/Conversation`,
+    {},
     { timeout: 15000 },
   );
   return res.data;

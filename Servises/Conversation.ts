@@ -8,11 +8,15 @@ type sendData = {
 
 export type Lang = "fr" | "en" | "ar";
 
+export type MenuOption = { topic: string; label: string };
+
 export type ChatResponse = {
   response: string;
-  lang: Lang;
+  lang?: Lang;
   repondeAt: string;
-  conversationId:string
+  conversationId: string;
+  /** Présent quand le bot propose un menu d'options à sélectionner. */
+  action?: { label: string; options: MenuOption[] };
 };
 
 export type NetworkFailure = {
@@ -63,7 +67,7 @@ export const describeNetworkError = (error: unknown): NetworkFailure => {
 
 export const SendMesage = async (data: sendData): Promise<ChatResponse> => {
   const res = await axios.post<ChatResponse>(
-    `http://192.168.55.74:3000/exchange`,
+    `http://192.168.20.10:3000/exchange`,
     data,
     // Sans timeout, axios attend indéfiniment et l'utilisateur reste
     // bloqué sur les points de chargement.
