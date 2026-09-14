@@ -1,8 +1,17 @@
 import Feather from "@expo/vector-icons/Feather";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import dayjs from "dayjs";
 import Logo from "../../assets/logo.svg";
-import {useAppData} from '../Data/Appcontext'
+import { useAppData } from "../Data/Appcontext";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  GetConversations,
+  GetConversationsById,
+  UpdateConversation,
+  DeleteConversation,
+} from "../../Servises/Historique";
+import ConfirmModal from "../Common/ConfirmModal";
 import {
   StyleSheet,
   Text,
@@ -12,79 +21,13 @@ import {
   Animated,
   ScrollView,
   Dimensions,
+  TextInput,
 } from "react-native";
-
-type HistoryItem = {
-  id: string;
-  title: string;
-  time: string;
-  icon: React.ComponentProps<typeof Feather>["name"];
-  iconColor: string;
-  iconBackground: string;
-};
 
 type Props = {
   visible: boolean;
   onClose: () => void;
 };
-
-const historyGroups: { label: string; items: HistoryItem[] }[] = [
-  {
-    label: "Aujourd'hui",
-    items: [
-      {
-        id: "1",
-        title: "Statut hydrique du Pivot 2",
-        time: "09:14",
-        icon: "droplet",
-        iconColor: "#2563EB",
-        iconBackground: "#DBEAFE",
-      },
-      {
-        id: "2",
-        title: "Alertes de stress hydrique",
-        time: "08:02",
-        icon: "alert-triangle",
-        iconColor: "#D97706",
-        iconBackground: "#FEF3C7",
-      },
-    ],
-  },
-  {
-    label: "Hier",
-    items: [
-      {
-        id: "3",
-        title: "Tour d'eau du jour",
-        time: "18:45",
-        icon: "check-circle",
-        iconColor: "#2E7D32",
-        iconBackground: "#DCFCE7",
-      },
-      {
-        id: "4",
-        title: "Bilan évapotranspiration (ETO)",
-        time: "11:20",
-        icon: "message-circle",
-        iconColor: "#0D9488",
-        iconBackground: "#CCFBF1",
-      },
-    ],
-  },
-  {
-    label: "Cette semaine",
-    items: [
-      {
-        id: "5",
-        title: "Prévisions météo semaine",
-        time: "Lundi",
-        icon: "cloud",
-        iconColor: "#7C3AED",
-        iconBackground: "#EDE9FE",
-      },
-    ],
-  },
-];
 
 const DRAWER_WIDTH = Dimensions.get("window").width * 0.75;
 
@@ -92,7 +35,96 @@ const HistoriqueDrawer = ({ visible, onClose }: Props) => {
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
-  const {  setConversationSart,setconversation } = useAppData();
+  const {
+    setConversationSart,
+    setconversation,
+    setcoversationId,
+    coversationId,
+  } = useAppData();
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { data, isPending } = useQuery({
+    queryKey: ["historique"],
+    queryFn: GetConversations,
+  });
+  const { mutate: fetchConversationById, isPending: isPendingConversation } =
+    useMutation({
+      mutationFn: GetConversationsById,
+      onSuccess: (data) => {
+        setconversation(
+          data.exchanges.map((exchange) => ({
+            message: exchange.message,
+            response: exchange.response,
+            loadingResponse: false,
+            createdAt: exchange.createdAt,
+            lang: exchange.lang ?? undefined,
+          })),
+        );
+        setcoversationId(data.id);
+        setConversationSart(true);
+        closeDrawer();
+      },
+    });
+
+  const { mutate: updateTitle, isPending: isUpdatingTitle } = useMutation({
+    mutationFn: UpdateConversation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["historique"] });
+      setEditingId(null);
+    },
+  });
+
+  const { mutate: deleteConversation } = useMutation({
+    mutationFn: DeleteConversation,
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["historique"] });
+      if (id === coversationId) {
+        setconversation([]);
+        setcoversationId(undefined);
+        setConversationSart(false);
+        onClose();
+      }
+    },
+  });
+
+  const openConversation = (id: string) => {
+    fetchConversationById(id);
+  };
+
+  const startEditing = (id: string, currentTitle: string) => {
+    setEditingId(id);
+    setEditingTitle(currentTitle);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingTitle("");
+  };
+
+  const confirmEditing = () => {
+    const title = editingTitle.trim();
+    if (editingId && title) {
+      updateTitle({ id: editingId, Title: title });
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    setDeleteId(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteId) {
+      deleteConversation(deleteId);
+      setDeleteId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteId(null);
+  };
+
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -164,11 +196,15 @@ const HistoriqueDrawer = ({ visible, onClose }: Props) => {
             </Pressable>
           </View>
 
-          <Pressable style={styles.newChatButton} onPress={()=>{
-            setConversationSart(false)
-            setconversation([])
-            closeDrawer()
-          }}>
+          <Pressable
+            style={styles.newChatButton}
+            onPress={() => {
+              setConversationSart(false);
+              setconversation([]);
+              setcoversationId(undefined);
+              closeDrawer();
+            }}
+          >
             <Feather name="plus" size={16} color="#FFFFFF" />
             <Text style={styles.newChatText}>Nouvelle conversation</Text>
           </Pressable>
@@ -178,42 +214,122 @@ const HistoriqueDrawer = ({ visible, onClose }: Props) => {
             contentContainerStyle={styles.drawerListContent}
             showsVerticalScrollIndicator={false}
           >
-            {historyGroups.map((group) => (
-              <View key={group.label} style={styles.historyGroup}>
-                <Text style={styles.groupLabel}>{group.label}</Text>
-                {group.items.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    style={({ pressed }) => [
-                      styles.historyItem,
-                      pressed && styles.historyItemPressed,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.historyIcon,
-                        { backgroundColor: item.iconBackground },
+            {isPending ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>Chargement...</Text>
+              </View>
+            ) : data && data.length > 0 ? (
+              <View style={styles.historyGroup}>
+                <Text style={styles.groupLabel}>Conversations</Text>
+                {data.map((item) => {
+                  const isEditing = editingId === item.id;
+                  const isSelected = item.id === coversationId;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => !isEditing && openConversation(item.id)}
+                      disabled={isPendingConversation}
+                      style={({ pressed }) => [
+                        styles.historyItem,
+                        isSelected && styles.historyItemSelected,
+                        pressed && styles.historyItemPressed,
                       ]}
                     >
-                      <Feather
-                        name={item.icon}
-                        size={15}
-                        color={item.iconColor}
-                      />
-                    </View>
-                    <View style={styles.historyTextWrap}>
-                      <Text style={styles.historyTitle} numberOfLines={1}>
-                        {item.title}
-                      </Text>
-                      <Text style={styles.historyDate}>{item.time}</Text>
-                    </View>
-                    <Feather name="chevron-right" size={16} color="#CBD5E1" />
-                  </Pressable>
-                ))}
+                      <View
+                        style={[
+                          styles.historyIcon,
+                          { backgroundColor: "#DBEAFE" },
+                        ]}
+                      >
+                        <Feather
+                          name="message-circle"
+                          size={15}
+                          color="#2563EB"
+                        />
+                      </View>
+                      <View style={styles.historyTextWrap}>
+                        {isEditing ? (
+                          <TextInput
+                            value={editingTitle}
+                            onChangeText={setEditingTitle}
+                            style={styles.historyTitleInput}
+                            autoFocus
+                            onSubmitEditing={confirmEditing}
+                          />
+                        ) : (
+                          <>
+                            <Text style={styles.historyTitle} numberOfLines={1}>
+                              {item.Title}
+                            </Text>
+                            <Text style={styles.historyDate}>
+                              {dayjs(item.startedAt).format("DD/MM HH:mm")}
+                            </Text>
+                          </>
+                        )}
+                      </View>
+                      {isEditing ? (
+                        <>
+                          <Pressable
+                            onPress={confirmEditing}
+                            disabled={isUpdatingTitle}
+                            hitSlop={8}
+                            style={styles.historyActionButton}
+                          >
+                            <Feather name="check" size={16} color="#2E7D32" />
+                          </Pressable>
+                          <Pressable
+                            onPress={cancelEditing}
+                            hitSlop={8}
+                            style={styles.historyActionButton}
+                          >
+                            <Feather name="x" size={16} color="#94A3B8" />
+                          </Pressable>
+                        </>
+                      ) : (
+                        <>
+                          <Pressable
+                            onPress={() => startEditing(item.id, item.Title)}
+                            hitSlop={8}
+                            style={styles.historyActionButton}
+                          >
+                            <Feather name="edit-2" size={14} color="#94A3B8" />
+                          </Pressable>
+                          <Pressable
+                            onPress={() => confirmDelete(item.id)}
+                            hitSlop={8}
+                            style={styles.historyActionButton}
+                          >
+                            <Feather name="trash-2" size={14} color="#EF4444" />
+                          </Pressable>
+                        </>
+                      )}
+                    </Pressable>
+                  );
+                })}
               </View>
-            ))}
+            ) : (
+              <View style={styles.emptyState}>
+                <Feather name="message-circle" size={28} color="#CBD5E1" />
+                <Text style={styles.emptyStateText}>
+                  Aucune conversation pour le moment
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </Animated.View>
+
+        <ConfirmModal
+          visible={deleteId !== null}
+          title="Supprimer la conversation"
+          message="Cette action est définitive et supprimera l'historique de cette discussion."
+          confirmText="Supprimer"
+          cancelText="Annuler"
+          type="danger"
+          iconName="trash-2"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          useOverlay={true}
+        />
       </View>
     </Modal>
   );
@@ -340,6 +456,11 @@ const styles = StyleSheet.create({
   historyItemPressed: {
     backgroundColor: "#EEF2F6",
   },
+  historyItemSelected: {
+    backgroundColor: "#DCFCE7",
+    borderWidth: 1,
+    borderColor: "#2E7D32",
+  },
   historyIcon: {
     width: 32,
     height: 32,
@@ -359,5 +480,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#94A3B8",
     marginTop: 2,
+  },
+  historyTitleInput: {
+    fontSize: 13,
+    color: "#334155",
+    fontWeight: "600",
+    padding: 0,
+  },
+  historyActionButton: {
+    width: 26,
+    height: 26,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    gap: 10,
+  },
+  emptyStateText: {
+    fontSize: 13,
+    color: "#94A3B8",
+    textAlign: "center",
   },
 });

@@ -11,7 +11,7 @@ export type conversationType = {
   message: string;
   response: string;
   loadingResponse: boolean;
-  repondeAt?: string;
+  createdAt?: string;
   /** Langue détectée de l'échange — sert à aligner l'arabe à droite. */
   lang?: "fr" | "en" | "ar";
 };
@@ -21,6 +21,8 @@ type AppContextType = {
   setConversationSart: Dispatch<SetStateAction<boolean>>;
   conversation: conversationType[];
   setconversation: Dispatch<SetStateAction<conversationType[]>>;
+  coversationId:string | undefined,
+  setcoversationId:Dispatch<SetStateAction<string | undefined>>
 };
 
 const Data = createContext<AppContextType | null>(null);
@@ -28,6 +30,7 @@ const Data = createContext<AppContextType | null>(null);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ConversationSart, setConversationSart] = useState<boolean>(false);
   const [conversation, setconversation] = useState<conversationType[]>([]);
+  const [coversationId,setcoversationId] = useState<string | undefined>(undefined)
 
   return (
     <Data.Provider
@@ -36,6 +39,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setConversationSart,
         conversation,
         setconversation,
+        coversationId,
+        setcoversationId,
       }}
     >
       {children}

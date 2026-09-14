@@ -90,7 +90,7 @@ const Conversation = () => {
           </AnimatedEntry>
 
           <AnimatedEntry style={styles.botCard} delay={150}>
-            <BotHeader repondeAt={item.repondeAt} rtl={item.lang === "ar"} />
+            <BotHeader repondeAt={item.createdAt} rtl={item.lang === "ar"} />
 
             {item.loadingResponse ? (
               <ResponseLoading />

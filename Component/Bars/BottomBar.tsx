@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAppData } from "../Data/Appcontext";
 import {
   SendMesage,
@@ -20,10 +21,11 @@ import NetworkAlert from "../Common/NetworkAlert";
 type PendingRetry = { failure: NetworkFailure; text: string; index: number };
 
 const BottomBar = () => {
-  const { conversation, setconversation, setConversationSart } = useAppData();
+  const { conversation, setconversation, setConversationSart,setcoversationId,coversationId} = useAppData();
   const [Text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [retry, setRetry] = useState<PendingRetry | null>(null);
+  const queryClient = useQueryClient();
 
   /** Envoie le message et réconcilie la bulle à l'index donné. Réutilisé par « Réessayer ». */
   const deliver = async (userText: string, index: number) => {
@@ -38,7 +40,7 @@ const BottomBar = () => {
     );
 
     try {
-      const data = await SendMesage({ message: userText });
+      const data = await SendMesage({ message: userText, conversationId: coversationId });
       setconversation((prev) =>
         prev.map((item, i) =>
           i === index
@@ -52,6 +54,8 @@ const BottomBar = () => {
             : item,
         ),
       );
+      queryClient.invalidateQueries({ queryKey: ["historique"] });
+      setcoversationId(data?.conversationId);
     } catch (err) {
       const failure = describeNetworkError(err);
 

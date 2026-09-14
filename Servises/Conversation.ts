@@ -3,14 +3,16 @@ import axios from "axios";
 
 type sendData = {
   message: string;
+  conversationId: string | undefined
 };
 
 export type Lang = "fr" | "en" | "ar";
 
-type ChatResponse = {
+export type ChatResponse = {
   response: string;
   lang: Lang;
   repondeAt: string;
+  conversationId:string
 };
 
 export type NetworkFailure = {
@@ -61,7 +63,7 @@ export const describeNetworkError = (error: unknown): NetworkFailure => {
 
 export const SendMesage = async (data: sendData): Promise<ChatResponse> => {
   const res = await axios.post<ChatResponse>(
-    `http://192.168.20.10:3000/Conversation/response`,
+    `http://192.168.55.74:3000/exchange`,
     data,
     // Sans timeout, axios attend indéfiniment et l'utilisateur reste
     // bloqué sur les points de chargement.
@@ -69,3 +71,4 @@ export const SendMesage = async (data: sendData): Promise<ChatResponse> => {
   );
   return res.data;
 };
+
