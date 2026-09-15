@@ -1,22 +1,33 @@
 import axios from "axios";
-
+import {API_URL} from '../config/Env.config'
 
 type sendData = {
   message: string;
-  conversationId: string | undefined
+  conversationId: string | undefined;
+  topic?: string;
 };
 
 export type Lang = "fr" | "en" | "ar";
 
-export type MenuOption = { topic: string; label: string };
+export type MenuItem = { descepretion: string; topic: string };
+
+export type ChartData = {
+  title: string;
+  labels: string[];
+  values: number[];
+  unit?: string;
+  sensorName?: string;
+};
 
 export type ChatResponse = {
   response: string;
+  topic?: string;
   lang?: Lang;
   repondeAt: string;
   conversationId: string;
-  /** Présent quand le bot propose un menu d'options à sélectionner. */
-  action?: { label: string; options: MenuOption[] };
+  /** Menu d'options proposées par le bot pour guider la conversation — absent si l'intent n'en propose pas. */
+  menu?: MenuItem[];
+  chartData?: ChartData;
 };
 
 export type NetworkFailure = {
@@ -67,7 +78,7 @@ export const describeNetworkError = (error: unknown): NetworkFailure => {
 
 export const SendMesage = async (data: sendData): Promise<ChatResponse> => {
   const res = await axios.post<ChatResponse>(
-    `http://192.168.20.10:3000/exchange`,
+    `${API_URL}/exchange`,
     data,
     // Sans timeout, axios attend indéfiniment et l'utilisateur reste
     // bloqué sur les points de chargement.

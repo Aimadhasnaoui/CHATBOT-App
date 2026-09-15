@@ -13,6 +13,7 @@ import ResponseLoading from "./ResponseLoading";
 import MenuOptions from "./MenuOptions";
 import { useSendMessage } from "./useSendMessage";
 import { ResponseDateDisplay } from "../utilis/utilis";
+import StationChart from "./StationChart";
 type AnimatedEntryProps = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -79,6 +80,7 @@ const Conversation = () => {
   const { send, sending } = useSendMessage();
   const [, setTick] = useState(0);
   useEffect(() => {
+    console.log(conversation)
     const timer = setInterval(() => setTick((t) => t + 1), 30000);
     return () => clearInterval(timer);
   }, []);
@@ -109,6 +111,9 @@ const Conversation = () => {
                 >
                   {item.response}
                 </Text>
+
+                {item.chartData && <StationChart chartData={item.chartData} />}
+
                 {item.menu && (
                   <MenuOptions
                     options={item.menu}

@@ -14,13 +14,19 @@ export type PendingRetry = { failure: NetworkFailure; text: string; index: numbe
  * tapées : les deux doivent réconcilier la même bulle et gérer le même
  * réessai en cas d'échec réseau. */
 export const useSendMessage = () => {
-  const { conversation, setconversation, setConversationSart, setcoversationId, coversationId } =
-    useAppData();
+  const {
+    conversation,
+    setconversation,
+    setConversationSart,
+    setcoversationId,
+    coversationId,
+    setStationModalVisible,
+  } = useAppData();
   const [sending, setSending] = useState(false);
   const [retry, setRetry] = useState<PendingRetry | null>(null);
   const queryClient = useQueryClient();
 
-  const deliver = async (userText: string, index: number) => {
+  const deliver = async (userText: string, index: number, topic?: string) => {
     setSending(true);
     setRetry(null); // masque la bannière le temps de la tentative
 
@@ -31,7 +37,7 @@ export const useSendMessage = () => {
     );
 
     try {
-      const data = await SendMesage({ message: userText, conversationId: coversationId });
+      const data = await SendMesage({ message: userText, conversationId: coversationId, topic });
       setconversation((prev) =>
         prev.map((item, i) =>
           i === index
@@ -41,13 +47,21 @@ export const useSendMessage = () => {
                 loadingResponse: false,
                 createdAt: data.repondeAt,
                 lang: data.lang,
-                menu: data.action?.options,
+                menu: data.menu?.map((item) => ({ topic: item.topic, label: item.descepretion })),
+                chartData: data.chartData,
               }
             : item,
         ),
       );
       queryClient.invalidateQueries({ queryKey: ["historique"] });
       setcoversationId(data?.conversationId);
+
+      if (
+        data?.topic === "donnestation" &&
+        !data?.response?.includes("Données Station Récupérées")
+      ) {
+        setStationModalVisible(true);
+      }
     } catch (err) {
       const failure = describeNetworkError(err);
 
@@ -64,9 +78,18 @@ export const useSendMessage = () => {
     }
   };
 
-  const send = async (userText: string) => {
+  const send = async (userText: string, topic?: string) => {
     const text = userText.trim();
     if (!text || sending) return;
+
+    if (
+      (topic === "donnestation" || text.toLowerCase() === "donnestation") &&
+      !text.includes("Période:") &&
+      !text.includes("Données station requested")
+    ) {
+      setStationModalVisible(true);
+      return;
+    }
 
     setConversationSart(true);
 
@@ -76,7 +99,7 @@ export const useSendMessage = () => {
       { message: text, response: "", loadingResponse: true },
     ]);
 
-    await deliver(text, index);
+    await deliver(text, index, topic);
   };
 
   return {

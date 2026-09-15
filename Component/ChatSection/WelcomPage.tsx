@@ -83,6 +83,7 @@ const ChatPage = () => {
       setConversationSart(true);
     } catch (err) {
       setError(describeNetworkError(err).message);
+      console.log(describeNetworkError(err).message)
     } finally {
       setStarting(false);
     }

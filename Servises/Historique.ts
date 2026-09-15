@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Lang } from "./Conversation";
+import {API_URL} from '../config/Env.config'
 
 export type ExchangeType = {
   id: string;
@@ -21,7 +22,7 @@ type ConversationType = {
 };
 export const GetConversations = async (): Promise<ConversationType[]> => {
   const res = await axios.get<ConversationType[]>(
-    `http://192.168.20.10:3000/Conversation`,
+    `${API_URL}/Conversation`,
     { timeout: 15000 },
   );
   return res.data;
@@ -30,7 +31,7 @@ export const GetConversationsById = async (
   id: string,
 ): Promise<ConversationType> => {
   const res = await axios.get<ConversationType>(
-    `http://192.168.20.10:3000/Conversation/${id}`,
+    `${API_URL}/Conversation/${id}`,
     { timeout: 15000 },
   );
   return res.data;
@@ -44,7 +45,7 @@ export const UpdateConversation = async ({
   Title: string;
 }): Promise<{ message: string }> => {
   const res = await axios.put<{ message: string }>(
-    `http://192.168.20.10:3000/Conversation/${id}`,
+    `${API_URL}/Conversation/${id}`,
     { Title },
     { timeout: 15000 },
   );
@@ -53,7 +54,7 @@ export const UpdateConversation = async ({
 
 export const DeleteConversation = async (id: string) => {
   const res = await axios.delete(
-    `http://192.168.20.10:3000/Conversation/${id}`,
+    `${API_URL}/Conversation/${id}`,
     { timeout: 15000 },
   );
   return res.data;
@@ -70,7 +71,7 @@ export type CreateConversationResponse = {
 
 export const CreatNewConversation = async (): Promise<CreateConversationResponse> => {
   const res = await axios.post<CreateConversationResponse>(
-    `http://192.168.20.10:3000/Conversation`,
+    `${API_URL}/Conversation`,
     {},
     { timeout: 15000 },
   );

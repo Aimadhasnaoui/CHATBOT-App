@@ -7,6 +7,8 @@ import {
   ReactNode,
 } from "react";
 
+import { ChartData } from "../../Servises/Conversation";
+
 export type MenuOption = { topic: string; label: string };
 
 export type conversationType = {
@@ -19,6 +21,7 @@ export type conversationType = {
   lang?: "fr" | "en" | "ar";
   /** Options proposées par le bot pour guider la conversation. */
   menu?: MenuOption[];
+  chartData?: ChartData;
 };
 
 type AppContextType = {
@@ -26,8 +29,10 @@ type AppContextType = {
   setConversationSart: Dispatch<SetStateAction<boolean>>;
   conversation: conversationType[];
   setconversation: Dispatch<SetStateAction<conversationType[]>>;
-  coversationId:string | undefined,
-  setcoversationId:Dispatch<SetStateAction<string | undefined>>
+  coversationId: string | undefined;
+  setcoversationId: Dispatch<SetStateAction<string | undefined>>;
+  stationModalVisible: boolean;
+  setStationModalVisible: Dispatch<SetStateAction<boolean>>;
 };
 
 const Data = createContext<AppContextType | null>(null);
@@ -35,7 +40,8 @@ const Data = createContext<AppContextType | null>(null);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ConversationSart, setConversationSart] = useState<boolean>(false);
   const [conversation, setconversation] = useState<conversationType[]>([]);
-  const [coversationId,setcoversationId] = useState<string | undefined>(undefined)
+  const [coversationId, setcoversationId] = useState<string | undefined>(undefined);
+  const [stationModalVisible, setStationModalVisible] = useState<boolean>(false);
 
   return (
     <Data.Provider
@@ -46,6 +52,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setconversation,
         coversationId,
         setcoversationId,
+        stationModalVisible,
+        setStationModalVisible,
       }}
     >
       {children}

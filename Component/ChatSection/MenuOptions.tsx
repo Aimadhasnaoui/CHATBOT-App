@@ -5,7 +5,7 @@ type Option = { topic: string; label: string };
 
 type MenuOptionsProps = {
   options: Option[];
-  onSelect: (label: string) => void;
+  onSelect: (userText: string, topic?: string) => void;
   disabled?: boolean;
 };
 
@@ -22,7 +22,7 @@ const MenuOptions = ({ options, onSelect, disabled }: MenuOptionsProps) => {
             pressed && styles.optionPressed,
             disabled && styles.optionDisabled,
           ]}
-          onPress={() => onSelect(option.label)}
+          onPress={() => onSelect(option.label || option.topic, option.topic)}
           disabled={disabled}
         >
           <Text style={styles.optionText}>{option.label}</Text>
